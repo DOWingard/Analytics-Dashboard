@@ -1,0 +1,22 @@
+{
+  "name": "Python Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.autoImportCompletions": true,
+        "python.analysis.typeCheckingMode": "basic"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  "postCreateCommand": "pip install --upgrade pip",
+  "remoteUser": "root"
+}

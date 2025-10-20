@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+.eggs/
+.env
+.venv
+env/
+venv/
+pip-wheel-metadata/
+*.log
+*.sqlite3
+.ipynb_checkpoints/
+*.ipynb~
+*.spec
+.coverage
+.tox/
+.nox/
+htmlcov/
+.pytest_cache/
+.cache/
+.coverage.*
+*.mod
+*.MOD
+*.o
+*.obj
+*.a
+*.so
+*.exe
+*.dll
+*.out
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+build/
+bin/
+lib/
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+.DS_Store
+Thumbs.db
+
+# Go
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.prof
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories
+vendor/
+
+# Go build cache
+.cache/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Binary output
+bin/
+dist/
+
+# Environment variables
+.env
+.env.local
+
+# Compiled Object files
+*.o
+*.a
+
+# Go mod download cache
+go.sum
