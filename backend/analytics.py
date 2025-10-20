@@ -1,10 +1,8 @@
 # backend/analytics.py
 import random
 
-def get_live_data():
-    """Simulate live metrics."""
-    return {
-        "cpu_usage": random.random() * 100,
-        "users_online": random.randint(10, 1000),
-        "sales": random.uniform(1000, 5000)
-    }
+class Analytics:
+    '''
+    Class of methods to transform
+    company data for live metering
+    '''
