@@ -1,6 +1,8 @@
+# backend/analytics.py
 import random
 
 def get_live_data():
+    """Simulate live metrics."""
     return {
         "cpu_usage": random.random() * 100,
         "users_online": random.randint(10, 1000),

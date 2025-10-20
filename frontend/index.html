@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-time Multi-Plot</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="multiChart" width="1000" height="500"></canvas>
+  <script>
+    const ctx = document.getElementById('multiChart').getContext('2d');
+
+    // Example series names: replace with dynamic names (e.g., stock symbols)
+    const seriesNames = ['Sine Wave', 'Cosine Wave'];  
+
+    // Initialize datasets with different colors
+    const colors = ['blue', 'red', 'green', 'orange', 'purple'];
+    const datasets = seriesNames.map((name, i) => ({
+      label: name,
+      data: [],
+      borderColor: colors[i % colors.length],
+      fill: false
+    }));
+
+    const data = {
+      labels: [],
+      datasets: datasets
+    };
+
+    const config = {
+      type: 'line',
+      data: data,
+      options: {
+        animation: false,
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 't' } },
+          y: { title: { display: true, text: 'Value' } }
+        }
+      }
+    };
+
+    const chart = new Chart(ctx, config);
+
+    // Connect to WebSocket
+    const ws = new WebSocket(`ws://${window.location.host}/ws/multi`);
+
+    ws.onopen = () => console.log("WebSocket connected");
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data); // Expect object: {seriesName1: value1, seriesName2: value2, ...}
+      const t = msg.t; // time or x value
+      data.labels.push(t.toFixed(1));
+
+      // Append new data to each dataset
+      data.datasets.forEach(ds => {
+        ds.data.push(msg[ds.label] ?? null); // null if missing
+      });
+
+      // Keep last 50 points
+      if (data.labels.length > 50) {
+        data.labels.shift();
+        data.datasets.forEach(ds => ds.data.shift());
+      }
+
+      chart.update('none'); // update without animation
+    };
+
+    ws.onclose = () => console.log("WebSocket closed");
+  </script>
+</body>
+</html>
