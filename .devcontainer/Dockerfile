@@ -1,14 +1,14 @@
 # Minimal Python 3.11 dev container
 FROM mcr.microsoft.com/devcontainers/python:0-3.11
 
-# Set working directory
+# Set working directory to the container's workspace
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
+# Copy requirements.txt from the .devcontainer folder and install dependencies
+COPY .devcontainer/requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy project files
+# Copy the rest of the project files
 COPY . .
 
 # Expose FastAPI port
