@@ -1,88 +1,108 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
+from contextlib import asynccontextmanager
 import asyncio
-from datetime import datetime
-import random  # demo only, replace with real API calls
+import sqlite3
+from pathlib import Path
+import json
+from testing.liveSIM import run_live_update
+import threading
 
-app = FastAPI()
+# --- Paths ---
+DB_PATH = Path("db/financial.db")
 
+# --- Background thread management ---
+def start_background_updater():
+    """Start live financial updater in background."""
+    thread = threading.Thread(target=run_live_update, args=(5,), daemon=True)
+    thread.start()
+    print("🚀 Live updater thread started.")
+
+
+# --- Modern lifespan handler ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_background_updater()
+    yield
+    print("🛑 FastAPI shutting down.")
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+# --- Helper: fetch revenue data from DB ---
+def fetch_revenue_data():
+    """Return (dates, revenues) for last 365 records."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT record_date, revenue
+        FROM financial
+        ORDER BY record_date ASC
+        LIMIT 365
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"date": r[0], "revenue": r[1]} for r in rows]
+
+
+# --- Frontend HTML ---
 html = """
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Top 100 Stocks Live</title>
+  <title>Company Revenue Live</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <h1>Top 100 Stocks Live</h1>
+  <h1>Company Revenue (Last 365 Days)</h1>
   <canvas id="chart" width="1200" height="600"></canvas>
   <script>
     const ctx = document.getElementById('chart').getContext('2d');
-    const datasets = [];
-
-    const tickers = Array.from({length: 100}, (_, i) => "STOCK" + (i+1));
-    tickers.forEach((t, i) => {
-      datasets.push({
-        label: t,
-        borderColor: `hsl(${i*3.6}, 70%, 50%)`,
-        backgroundColor: 'transparent',
-        data: []
-      });
-    });
-
     const chart = new Chart(ctx, {
       type: 'line',
-      data: { datasets: datasets },
+      data: { datasets: [{
+        label: "Revenue",
+        borderColor: "hsl(200, 70%, 50%)",
+        backgroundColor: "transparent",
+        data: []
+      }] },
       options: {
         animation: false,
         responsive: true,
         scales: {
-          x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
-          y: { title: { display: true, text: 'Price' } }
+          x: { type: 'category', title: { display: true, text: 'Date' } },
+          y: { title: { display: true, text: 'Revenue ($)' } }
         }
       }
     });
 
-    const ws = new WebSocket(`${window.location.protocol.replace("http","ws")}//${window.location.host}/ws/stocks`);
-    let startTime = Date.now();
+    const ws = new WebSocket(`${window.location.protocol.replace("http","ws")}//${window.location.host}/ws/revenue`);
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      const t = (Date.now() - startTime) / 1000; // seconds since page load
-
-      tickers.forEach((ticker, idx) => {
-        chart.data.datasets[idx].data.push({ x: t, y: msg[ticker] });
-        // keep last 50 points per stock
-        if (chart.data.datasets[idx].data.length > 50) {
-          chart.data.datasets[idx].data.shift();
-        }
-      });
-
-      // Only update after pushing all data
+      chart.data.datasets[0].data = msg.map(d => ({ x: d.date, y: d.revenue }));
       chart.update('none');
     };
   </script>
 </body>
 </html>
-
 """
+
 
 @app.get("/")
 async def get_root():
     return HTMLResponse(html)
 
-# Demo function: replace with async API call to Polygon/IEX/Alpaca
-async def fetch_latest_prices():
-    # Simulate 100 stocks with random prices
-    return {f"STOCK{i+1}": round(100 + random.random()*50, 2) for i in range(100)}
 
-@app.websocket("/ws/stocks")
-async def websocket_stocks(ws: WebSocket):
+# --- WebSocket stream for revenue updates ---
+@app.websocket("/ws/revenue")
+async def websocket_revenue(ws: WebSocket):
     await ws.accept()
     try:
         while True:
-            prices = await fetch_latest_prices()
-            await ws.send_json(prices)
-            await asyncio.sleep(1)  # 1 second updates
+            data = fetch_revenue_data()
+            await ws.send_text(json.dumps(data))
+            await asyncio.sleep(5)  # match DB update rate
     except Exception:
         await ws.close()
