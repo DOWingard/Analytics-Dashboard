@@ -5,7 +5,7 @@ from pathlib import Path
 DB_FOLDER = Path(__file__).parent
 
 DATABASES = {
-    "financials": "financial.sql",
+    "financial": "financial.sql",
     "platform": "platform.sql"
 }
 

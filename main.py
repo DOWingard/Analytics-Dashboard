@@ -16,7 +16,7 @@ def start_background_updater():
     """Start live financial updater in background."""
     thread = threading.Thread(target=run_live_update, args=(5,), daemon=True)
     thread.start()
-    print("🚀 Live updater thread started.")
+    print("Live updater thread started.")
 
 
 # --- Modern lifespan handler ---
@@ -24,7 +24,7 @@ def start_background_updater():
 async def lifespan(app: FastAPI):
     start_background_updater()
     yield
-    print("🛑 FastAPI shutting down.")
+    print("FastAPI shutting down.")
 
 
 app = FastAPI(lifespan=lifespan)
