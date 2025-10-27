@@ -3,18 +3,21 @@ import os
 from dotenv import load_dotenv
 
 # ==========================================================
-# Configuration
+# Load environment variables from .env in the same folder
 # ==========================================================
-# Example connection string:
-# postgresql://username:password@localhost:5432/analyticsdb
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://nullANDvoid:nullANDpassword@localhost:6969/nullANDdb")
-
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
+# ==========================================================
+# Build database connection string from .env
+# ==========================================================
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "6969")
+
+DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 # Path to metrics.sql (assumed in same folder)
 SQL_FILE = os.path.join(os.path.dirname(__file__), "metrics.sql")
@@ -24,7 +27,7 @@ SQL_FILE = os.path.join(os.path.dirname(__file__), "metrics.sql")
 # ==========================================================
 def main():
     if not os.path.exists(SQL_FILE):
-        print(f"❌ File not found: {SQL_FILE}")
+        print(f"[!] File not found: {SQL_FILE}")
         return
 
     # Read the schema file
@@ -42,9 +45,9 @@ def main():
         cur.close()
         conn.close()
 
-        print("✅ metrics.sql executed successfully. Database initialized.")
+        print("[>] metrics.sql executed successfully. Database initialized.")
     except Exception as e:
-        print("❌ Error executing metrics.sql:", e)
+        print("[!] Error executing metrics.sql:", e)
 
 # ==========================================================
 # Entry point
