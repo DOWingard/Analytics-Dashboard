@@ -13,10 +13,10 @@ if not exist "%SRC_ENV_FILE%" (
     exit /b 1
 )
 
-REM Prompt for confirmation with default option
+REM Prompt for confirmation (can pass "y" as first argument)
 set "CHOICE=%1"
 if /I "%CHOICE%"=="" (
-    set /p CHOICE=[?] Update env scripts [y/n]? 
+    set /p CHOICE=[?] Update existing env scripts [y/n]? 
 )
 
 if /I not "%CHOICE%"=="y" (
@@ -24,10 +24,11 @@ if /I not "%CHOICE%"=="y" (
     exit /b 0
 )
 
-REM Recursively update existing .env files
+REM Recursively update existing .env files ONLY (no new files created)
 for /r "%PROJECT_ROOT%" %%F in (.env) do (
     REM Skip the source .env
     if /I not "%%~fF"=="%SRC_ENV_FILE%" (
+        REM Update the file and print the path
         copy /Y "%SRC_ENV_FILE%" "%%~fF" >nul
         echo [>] Updated: %%~fF
     )
