@@ -1,5 +1,4 @@
 -- Financial database schema
-
 CREATE TABLE IF NOT EXISTS financial (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     record_date DATE NOT NULL,
@@ -11,3 +10,15 @@ CREATE TABLE IF NOT EXISTS financial (
 
 -- Optional index to query by date faster
 CREATE INDEX IF NOT EXISTS idx_financial_date ON financial (record_date);
+
+-- View to calculate cumulative funds (running total of revenue)
+CREATE VIEW IF NOT EXISTS financial_with_funds AS
+SELECT
+    id,
+    record_date,
+    gross,
+    costs,
+    revenue,
+    notes,
+    SUM(revenue) OVER (ORDER BY record_date) AS funds
+FROM financial;
