@@ -1,20 +1,24 @@
-version: '3.9'
-services:
-  analytics_api:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./db:/app/db          
-    restart: unless-stopped
 
-  live_updater:
-    build: .
-    command: python testing/liveUpdater.py
+services:
+  dev:
+    image: postgres:15 
+    container_name: void-seek  # e.g., your Python or app container
     volumes:
-      - ./backend:/app       
-      - ./db:/app/db         
+      - .:/app:cached
+    ports:
+      - "4200:4200"
     depends_on:
-      - analytics_api
-    restart: unless-stopped
+      - db
+
+  db:
+    image: postgres:15
+    container_name: void-abyss
+    env_file:
+      - .env
+    ports:
+      - "6969:6969"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
