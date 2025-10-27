@@ -4,7 +4,7 @@ from datetime import datetime
 import random
 import time
 
-DB_PATH_FINANCIAL = Path(__file__).resolve().parent.parent / "db/financial.db"
+DB_PATH_FINANCIAL = Path(__file__).resolve().parent.parent / "fakeDB/financial.db"
 
 def insert_random_entry():
     """Insert one random financial record and keep only the latest 365 entries."""

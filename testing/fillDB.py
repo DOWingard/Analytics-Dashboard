@@ -4,7 +4,7 @@ from datetime import date, timedelta
 import random
 
 # Database path relative to project root
-DB_PATH_FINANCIAL = Path(__file__).resolve().parent.parent / "db/financial.db"
+DB_PATH_FINANCIAL = Path(__file__).resolve().parent.parent / "fakeDB/financial.db"
 
 conn = sqlite3.connect(DB_PATH_FINANCIAL)
 cursor = conn.cursor()

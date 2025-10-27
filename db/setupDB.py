@@ -1,33 +1,56 @@
-# db/setupDB.py
-import sqlite3
-from pathlib import Path
+import psycopg2
+import os
+from dotenv import load_dotenv
 
-DB_FOLDER = Path(__file__).parent
+# ==========================================================
+# Load environment variables from .env in the same folder
+# ==========================================================
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path)
 
-DATABASES = {
-    "financial": "financial.sql",
-    "platform": "platform.sql"
-}
+# ==========================================================
+# Build database connection string from .env
+# ==========================================================
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "6969")
 
-def create_database(sql_file_path: Path, db_file_path: Path):
-    """Creates a SQLite database from a SQL file."""
-    if not sql_file_path.exists():
-        print(f"SQL file not found: {sql_file_path}")
+DATABASE_URL = f"postgresql://{POSTGRES_USER.lower()}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB.lower()}"
+
+# Path to metrics.sql (assumed in same folder)
+SQL_FILE = os.path.join(os.path.dirname(__file__), "metrics.sql")
+
+# ==========================================================
+# Script Execution
+# ==========================================================
+def main():
+    if not os.path.exists(SQL_FILE):
+        print(f"[!] File not found: {SQL_FILE}")
         return
 
-    conn = sqlite3.connect(db_file_path)
-    with open(sql_file_path, "r") as f:
-        sql_script = f.read()
-    conn.executescript(sql_script)
-    conn.commit()
-    conn.close()
-    print(f"Created database: {db_file_path}")
+    # Read the schema file
+    with open(SQL_FILE, "r", encoding="utf-8") as f:
+        schema_sql = f.read()
 
-def main():
-    for db_name, sql_filename in DATABASES.items():
-        sql_file = DB_FOLDER / sql_filename
-        db_file = DB_FOLDER / f"{db_name}.db"
-        create_database(sql_file, db_file)
+    try:
+        # Connect to PostgreSQL
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = True
+        cur = conn.cursor()
 
+        # Execute the SQL commands
+        cur.execute(schema_sql)
+        cur.close()
+        conn.close()
+
+        print("[>] metrics.sql executed successfully. Database initialized.")
+    except Exception as e:
+        print("[!] Error executing metrics.sql:", e)
+
+# ==========================================================
+# Entry point
+# ==========================================================
 if __name__ == "__main__":
     main()
