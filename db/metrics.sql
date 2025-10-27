@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS metrics;
 CREATE TABLE IF NOT EXISTS metrics (
     id SERIAL PRIMARY KEY,
     record_date DATE NOT NULL UNIQUE,
-    funds REAL NOT NULL DEFAULT 0,                 -- running total
+    funds REAL NOT NULL DEFAULT 0,              
     costs REAL NOT NULL,
     gross REAL NOT NULL,
     revenue REAL GENERATED ALWAYS AS (gross - costs) STORED,

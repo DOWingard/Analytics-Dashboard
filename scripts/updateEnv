@@ -1,0 +1,36 @@
+@echo off
+setlocal
+
+REM Move up to project root (adjust if needed)
+cd /d "%~dp0\.."
+set "PROJECT_ROOT=%CD%"
+
+REM Path to source .env
+set "SRC_ENV_FILE=%~dp0.env"
+
+if not exist "%SRC_ENV_FILE%" (
+    echo [!] Source .env not found: %SRC_ENV_FILE%
+    exit /b 1
+)
+
+REM Prompt for confirmation with default option
+set "CHOICE=%1"
+if /I "%CHOICE%"=="" (
+    set /p CHOICE=[?] Update env scripts [y/n]? 
+)
+
+if /I not "%CHOICE%"=="y" (
+    echo [!] Update cancelled.
+    exit /b 0
+)
+
+REM Recursively update existing .env files
+for /r "%PROJECT_ROOT%" %%F in (.env) do (
+    REM Skip the source .env
+    if /I not "%%~fF"=="%SRC_ENV_FILE%" (
+        copy /Y "%SRC_ENV_FILE%" "%%~fF" >nul
+        echo [>] Updated: %%~fF
+    )
+)
+
+echo [>] Done.
