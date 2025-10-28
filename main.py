@@ -1,180 +1,138 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
-from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from pathlib import Path
-import json
-from datetime import datetime, timedelta
-import random
-import io
-import base64
-from backend.analytics import Analytics
+from dotenv import load_dotenv
+from VOID.seeker.client.seeker import SEEKR
+from VOID.glimpse.sense import SENSE
+import uvicorn
+import io, sys, contextlib, base64
+import matplotlib.pyplot as plt
 
 # --- Paths ---
 FRONTEND_HTML = Path("frontend/interface.html")
 
 # --- Config ---
-MAX_POINTS = 50
-UPDATE_INTERVAL = 0.5
+UPDATE_INTERVAL = 1.0  # seconds
 
-# --- Background updater ---
-def start_background_updater():
-    # dummy placeholder for your liveSIM updater
-    pass
+# --- Load .env ---
+load_dotenv()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    start_background_updater()
-    yield
+# --- Initialize SEEKR ---
+ckr = SEEKR()
 
-app = FastAPI(lifespan=lifespan)
+# --- Initialize SEEKR ---
+void = SENSE()
 
-# --- WebSocket ---
-@app.websocket("/ws/multi")
-async def websocket_multi(ws: WebSocket):
+
+# --- FastAPI App ---
+app = FastAPI(title="Live Metrics Dashboard")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Metrics WebSocket ---
+@app.websocket("/ws/metrics")
+async def websocket_metrics(ws: WebSocket):
     await ws.accept()
-
-    # Create a PERSISTENT Analytics instance for this WebSocket connection
-    analytics_instance = Analytics()
-
-    # --- Safe command execution in terminal with plot capture ---
-    async def safe_exec(command: str):
-        import io, contextlib
-        import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
-        from matplotlib import pyplot as plt
-        
-        # Use the persistent analytics instance
-        env = {"void": analytics_instance, "_": None, "__builtins__": __builtins__}
-        buf = io.StringIO()
-        plot_data = None
-        
-        with contextlib.redirect_stdout(buf):
-            try:
-                try:
-                    result = eval(command, env)
-                    if result is not None:
-                        env["_"] = result
-                except SyntaxError:
-                    exec(command, env)
-                
-                # Check if any matplotlib figures were created
-                if plt.get_fignums():
-                    # Capture the current figure
-                    img_buf = io.BytesIO()
-                    plt.savefig(img_buf, format='png', bbox_inches='tight', dpi=100)
-                    img_buf.seek(0)
-                    plot_data = base64.b64encode(img_buf.read()).decode('utf-8')
-                    plt.close('all')  # Close all figures
-                    
-            except Exception as e:
-                print(f"Error: {e}")
-        
-        return buf.getvalue().strip(), plot_data
-
-    # --- Series definitions ---
-    all_series = [
-        "gross", "costs", "revenue",
-        "active_users", "new_users", "churned_users", "total"
-    ]
-    selected_series = set(all_series)
-
-    # Latest data keyed by date
-    latest_data = {}
-
-    # Current funds for runway calculation
-    current_funds = 50000  # starting funds
-
-    # --- Generate and stream fake data ---
-    async def stream_data():
-        nonlocal latest_data, selected_series, current_funds
-        base_time = datetime.now()
-        counter = 0
-        while True:
-            # generate a new timestamp
-            now = (base_time + timedelta(seconds=counter * UPDATE_INTERVAL)).strftime("%Y-%m-%d %H:%M:%S")
-            counter += 1
-
-            # financial metrics
-            gross = round(random.uniform(1000, 5000), 2)
-            costs = round(random.uniform(500, 3000), 2)
-            revenue = gross - costs
-
-            # platform metrics
-            active_users = random.randint(100, 1000)
-            new_users = random.randint(10, 100)
-            churned_users = random.randint(0, 20)
-
-            # total field
-            total = gross + revenue + costs
-
-            # update current funds
-            current_funds += revenue - costs
-
-            # calculate runway
-            runway = current_funds / max(costs - revenue, 1)  # avoid division by zero
-
-            # merge into single timestamp
-            latest_data[now] = {
-                "date": now,
-                "gross": gross,
-                "costs": costs,
-                "revenue": revenue,
-                "active_users": active_users,
-                "new_users": new_users,
-                "churned_users": churned_users,
-                "total": total
-            }
-
-            # send the whole data for this timestamp + runway
-            await ws.send_json({
-                "data": latest_data[now],
-                "runway": round(runway, 1)
-            })
-
-            # keep only last MAX_POINTS
-            if len(latest_data) > MAX_POINTS:
-                oldest = sorted(latest_data.keys())[0]
-                del latest_data[oldest]
-
-            await asyncio.sleep(UPDATE_INTERVAL)
-
-    stream_task = asyncio.create_task(stream_data())
-
-    # --- WebSocket receive loop ---
     try:
         while True:
-            data = await ws.receive_text()
-            try:
-                msg = json.loads(data)
-                if "plot" in msg and isinstance(msg["plot"], list):
-                    selected_series = set(msg["plot"]) & set(all_series)
-                    await ws.send_json({"output": f"Plotting series: {', '.join(selected_series)}"})
-                elif "command" in msg:
-                    cmd = msg.get("command", "").strip()
-                    if cmd:
-                        out, plot_data = await safe_exec(cmd)
-                        response = {}
-                        if out:
-                            response["output"] = str(out)
-                        if plot_data:
-                            response["plot"] = plot_data
-                        if response:
-                            await ws.send_json(response)
-            except json.JSONDecodeError:
-                await ws.send_json({"output": "Invalid JSON"})
-            except Exception as e:
-                await ws.send_json({"output": f"Error: {e}"})
+            metrics_data = ckr.metrics_as_dict() or {}
+            runway_months = ckr.compute_runway(metrics_data)
+
+            data_list = []
+            for date, values in metrics_data.items():
+                row = {"record_date": date}
+                for k, v in values.items():
+                    try:
+                        row[k] = float(v or 0)
+                    except Exception:
+                        row[k] = 0.0
+                data_list.append(row)
+
+            await ws.send_json({
+                "data": data_list,
+                "runway": runway_months
+            })
+            await asyncio.sleep(UPDATE_INTERVAL)
     except WebSocketDisconnect:
-        stream_task.cancel()
-    except Exception:
-        stream_task.cancel()
+        pass
+    except Exception as e:
+        print(f"[!] Metrics WS error: {e}")
         try:
             await ws.close()
         except:
             pass
 
-# --- Serve frontend ---
+# --- REPL WebSocket ---
+command_history = []
+
+@app.websocket("/ws/repl")
+async def websocket_repl(ws: WebSocket):
+    await ws.accept()
+    banner = "[hint: void.help()]\n>>> "
+    await ws.send_json({"type": "text", "content": banner})
+
+    repl_globals = {"void": void, "plt": plt}
+    
+    try:
+        while True:
+            msg = await ws.receive_text()
+            command_history.append(msg)  # store command
+
+            stdout = io.StringIO()
+            plot_sent = False
+            try:
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stdout):
+                    # first try eval
+                    try:
+                        result = eval(msg, repl_globals)
+                        if result is not None:
+                            print(result)
+                    except SyntaxError:
+                        # fallback to exec
+                        exec(msg, repl_globals)
+
+                    # check for matplotlib figures
+                    figs = [plt.figure(n) for n in plt.get_fignums()]
+                    for fig in figs:
+                        buf = io.BytesIO()
+                        fig.savefig(buf, format="png")
+                        plt.close(fig)
+                        buf.seek(0)
+                        img_b64 = base64.b64encode(buf.read()).decode()
+                        await ws.send_json({"type":"plot","content":img_b64})
+                        plot_sent = True
+            except Exception as e:
+                print(f"Error: {e}")
+
+            output = stdout.getvalue()
+            if output.strip():
+                # send output to frontend
+                await ws.send_json({"type": "text", "content": output})
+            # send prompt
+            await ws.send_json({"type": "text", "content": ">>> "})
+            # also print to server console
+            if output.strip():
+                print(output, end="")
+            if plot_sent:
+                print("[Plot sent to frontend]")
+    except WebSocketDisconnect:
+        pass
+
+# --- Serve Frontend ---
 @app.get("/")
 async def get_root():
+    if not FRONTEND_HTML.exists():
+        return {"error": "Frontend file not found"}
     return FileResponse(FRONTEND_HTML)
+
+# --- Run server ---
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

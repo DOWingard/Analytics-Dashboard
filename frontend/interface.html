@@ -4,250 +4,172 @@
   <title>Live Analytics</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
-    body { font-family: monospace; background: #111; color: #ddd; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; position: relative; }
-    canvas { background: #222; border: 1px solid #555; margin-top: 20px; width: 90%; max-width: 1000px; }
-    #series-toggle { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-    .toggle-btn { background: #333; color: #ddd; border: 1px solid #555; padding: 5px 10px; cursor: pointer; transition: 0.2s; }
-    .toggle-btn.active { color: #111; }
-
-    #terminal { 
-      width: 90%; 
-      max-width: 1000px; 
-      background: #000; 
-      border: 1px solid #555; 
-      margin-top: 20px; 
-      height: 600px; 
-      display: flex; 
-      flex-direction: column; 
-      color: #0f0; 
-      overflow: hidden; 
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: monospace;
+      background: #111;
+      color: #ddd;
+      display: flex;
+      flex-direction: column;
     }
-    #terminal-output { 
-      flex: 1; 
-      overflow-y: auto; 
-      padding: 10px; 
-    }
-    #input-wrapper { display: flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 5px 10px; }
-    #input-line { width: 100%; background: none; border: none; color: #0f0; outline: none; font-family: monospace; font-size: 14px; }
-    #input-wrapper span { color: #0f0; }
 
-    #runway-display {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      text-align: center;
+    #chart-container {
+      flex: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    canvas {
+      background: #222;
+      border: 1px solid #555;
+      width: 90%;
+      max-width: 1000px;
+      height: 100%;
+    }
+
+    #terminal {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-top: 2px solid #0f0;
+      overflow: hidden;
+      background: #000;
       color: #0f0;
-      user-select: none;
     }
-    #runway-display .label { font-size: 18px; margin-bottom: 5px; }
-    #runway-display .value { font-size: 48px; font-weight: bold; line-height: 1; }
-    #runway-display .unit { font-size: 18px; margin-top: 2px; }
 
-    .terminal-image { 
-      margin-top: 10px; 
-      margin-bottom: 10px;
-      max-width: 100%; 
-      height: auto;
-      border: 1px solid #555; 
+    #terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+
+    #terminal-input {
+      border: none;
+      outline: none;
+      width: 100%;
+      padding: 5px 10px;
+      font-family: monospace;
+      font-size: 14px;
+      background: #111;
+      color: #0f0;
+      box-sizing: border-box;
+    }
+
+    .terminal-plot {
+      max-width: 100%;
       display: block;
-      background: #fff;
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
-<h2>Live Analytics</h2>
 
-<div id="series-toggle"></div>
-<canvas id="multiChart" width="1000" height="500"></canvas>
-
-<div id="terminal">
-  <div id="terminal-output">
-    ------------------------------------------------------<br>
-    --------------------- VOID SENSE ---------------------<br>
-    ------------------------------------------------------<br>
-    ------------------ hint → void.help() ----------------<br>
-    ------------------------------------------------------
-  </div>
-  <div id="input-wrapper">
-    <span>&gt;</span>
-    <input type="text" id="input-line" placeholder="Enter command..." autofocus />
-  </div>
+<div id="chart-container">
+  <canvas id="multiChart"></canvas>
 </div>
 
-<div id="runway-display">
-  <div class="label">Runway:</div>
-  <div class="value" id="runway-value">0</div>
-  <div class="unit">months</div>
+<div id="terminal">
+  <div id="terminal-output"></div>
+  <input id="terminal-input" placeholder="Type Python commands..." />
 </div>
 
 <script>
-const ctx = document.getElementById('multiChart').getContext('2d');
-const output = document.getElementById('terminal-output');
-const input = document.getElementById('input-line');
-const toggleContainer = document.getElementById('series-toggle');
-const runwayValue = document.getElementById('runway-value');
-
-const colorPalette = ['#3fb950','#f85149','#ffa500','#1e90ff','#ff69b4','#9370db','#00ced1','#8b4513','#00ff7f','#adff2f'];
-
-let latestData = {};
-let seriesMap = {};
-let selectedSeries = new Set();
-
-const chart = new Chart(ctx, {
-  type: 'line',
-  data: { labels: [], datasets: [] },
-  options: {
-    animation: false,
-    responsive: true,
-    interaction: { intersect: false, mode: 'index' },
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { title: { display: true, text: 'Date' }, ticks: { color: '#ccc' }, grid: { color: '#333' } },
-      y: { title: { display: true, text: 'Value' }, ticks: { color: '#ccc' }, grid: { color: '#333' } }
-    }
-  }
-});
-
-function logToTerminal(text) {
-  if (!text) return;
-  const lines = text.split('\n');
-  lines.forEach(line => {
-    const div = document.createElement('div');
-    div.textContent = line;
-    output.appendChild(div);
-  });
-  output.scrollTop = output.scrollHeight;
-}
-
-function addImageToTerminal(base64) {
-  const img = document.createElement('img');
-  img.src = `data:image/png;base64,${base64}`;
-  img.className = 'terminal-image';
-  output.appendChild(img);
-  output.scrollTop = output.scrollHeight;
-}
-
-function addToggle(seriesName, color) {
-  const btn = document.createElement('button');
-  btn.textContent = seriesName;
-  btn.className = 'toggle-btn active';
-  btn.style.background = color;
-  btn.style.color = '#111';
-  selectedSeries.add(seriesName);
-
-  btn.addEventListener('click', () => {
-    btn.classList.toggle('active');
-    if (selectedSeries.has(seriesName)) {
-      selectedSeries.delete(seriesName);
-      btn.style.background = '#333';
-      btn.style.color = color;
-    } else {
-      selectedSeries.add(seriesName);
-      btn.style.background = color;
-      btn.style.color = '#111';
+  // === Chart.js setup ===
+  const ctx = document.getElementById('multiChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#ddd' } } },
+      scales: {
+        x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
+        y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+      }
     }
   });
 
-  toggleContainer.appendChild(btn);
-}
+  let seriesMap = {};
+  let accumulatedData = {};
 
-const ws = new WebSocket(`ws://${window.location.host}/ws/multi`);
-
-ws.onopen = () => {
-  console.log('WebSocket connected');
-};
-
-ws.onclose = (event) => {
-  console.log('WebSocket closed:', event.code, event.reason);
-  logToTerminal(`WebSocket closed (code: ${event.code})`);
-};
-
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
-  logToTerminal("WebSocket error - check console");
-};
-
-ws.onmessage = (event) => {
-  try {
-    const msg = JSON.parse(event.data);
-
-    // Terminal output
-    if (msg.output) {
-      logToTerminal(msg.output);
-    }
-
-    // Display plot image
-    if (msg.plot) {
-      addImageToTerminal(msg.plot);
-    }
-
-    // Update Runway
-    if (msg.runway !== undefined) {
-      runwayValue.textContent = Number(msg.runway).toFixed(1);
-    }
-
-    // Chart data
-    if (msg.data && msg.data.date) {
-      const date = msg.data.date;
-      if (!latestData[date]) latestData[date] = {};
-      Object.assign(latestData[date], msg.data);
-
-      Object.keys(msg.data).forEach(key => {
-        if (key === 'date') return;
-        if (!(key in seriesMap)) {
-          const color = colorPalette[Object.keys(seriesMap).length % colorPalette.length];
-          seriesMap[key] = chart.data.datasets.length;
-          chart.data.datasets.push({ 
-            label: key, 
-            data: [], 
-            borderColor: color, 
-            fill: false, 
-            tension: 0.2, 
-            hidden: false 
+  // === Metrics WebSocket ===
+  function connectMetrics() {
+    const ws = new WebSocket(`ws://${window.location.host}/ws/metrics`);
+    ws.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (Array.isArray(msg.data)) {
+          msg.data.forEach(row => {
+            const date = row.record_date;
+            if (!accumulatedData[date]) accumulatedData[date] = {};
+            Object.keys(row).forEach(k => {
+              if (k !== "record_date" && k !== "notes") {
+                accumulatedData[date][k] = parseFloat(row[k]) || 0;
+                if (!(k in seriesMap)) {
+                  seriesMap[k] = chart.data.datasets.length;
+                  chart.data.datasets.push({
+                    label: k,
+                    data: [],
+                    borderColor: '#' + Math.floor(Math.random()*16777215).toString(16),
+                    fill: false,
+                    tension: 0.25
+                  });
+                }
+              }
+            });
           });
-          addToggle(key, color);
         }
-      });
-    }
-  } catch(e) {
-    console.error('Error parsing message:', e);
-    logToTerminal("Error parsing message");
+      } catch(err) { console.error(err); }
+    };
+    ws.onclose = () => setTimeout(connectMetrics, 2000);
   }
-};
+  connectMetrics();
 
-setInterval(() => {
-  const dates = Object.keys(latestData).sort();
-  chart.data.labels = dates;
-  Object.keys(seriesMap).forEach(label => {
-    const idx = seriesMap[label];
-    chart.data.datasets[idx].data = dates.map(d => selectedSeries.has(label) ? latestData[d][label] ?? null : null);
+  setInterval(() => {
+    const dates = Object.keys(accumulatedData).sort();
+    chart.data.labels = dates;
+    Object.keys(seriesMap).forEach(k => {
+      chart.data.datasets[seriesMap[k]].data = dates.map(d => accumulatedData[d][k] ?? 0);
+    });
+    chart.update('none');
+  }, 500);
+
+  // === Terminal WebSocket ===
+  const terminalOutput = document.getElementById("terminal-output");
+  const terminalInput = document.getElementById("terminal-input");
+  const wsRepl = new WebSocket(`ws://${window.location.host}/ws/repl`);
+
+  wsRepl.onmessage = e => {
+    let data = e.data;
+    try {
+      const msg = JSON.parse(data);
+      if(msg.type === "text") {
+        terminalOutput.innerHTML += msg.content + "<br>";
+      } else if(msg.type === "plot") {
+        const img = document.createElement("img");
+        img.src = "data:image/png;base64," + msg.content;
+        img.className = "terminal-plot";
+        terminalOutput.appendChild(img);
+      }
+    } catch {
+      terminalOutput.innerHTML += data + "<br>";
+    }
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+  };
+
+  terminalInput.addEventListener("keydown", e => {
+    if(e.key === "Enter") {
+      wsRepl.send(terminalInput.value);
+      terminalInput.value = "";
+    }
   });
-  chart.update('none');
-}, 100);
-
-let commandHistory = [];
-let historyIndex = -1;
-
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const command = input.value.trim();
-    if (command) {
-      logToTerminal('> ' + command);
-      commandHistory.push(command);
-      historyIndex = commandHistory.length;
-      ws.send(JSON.stringify({ command }));
-      input.value = '';
-    }
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (historyIndex > 0) input.value = commandHistory[--historyIndex];
-  } else if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (historyIndex < commandHistory.length - 1) input.value = commandHistory[++historyIndex];
-    else { input.value = ''; historyIndex = commandHistory.length; }
-  }
-});
 </script>
+
 </body>
 </html>

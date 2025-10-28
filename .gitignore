@@ -77,8 +77,10 @@ vendor/
 # Go build cache
 .cache/
 
+.db_setup_done
+
 # IDE-specific files
-.vscode/
+#.vscode/
 .idea/
 *.swp
 *.swo
