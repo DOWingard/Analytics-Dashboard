@@ -80,7 +80,7 @@ uvicorn main:app --reload
     *   cheby.zero        ->  RETURNS: roots of model
 
 
-**[[SEEKR.md](seeker/___SEEKR.md)]**
+**[[SEEKR.md](VOID/seeker/___SEEKR.md)]**
 
 
 Command the SEEKR using the HIVEMIND  
