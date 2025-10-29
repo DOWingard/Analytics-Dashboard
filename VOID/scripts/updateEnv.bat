@@ -30,7 +30,7 @@ for /r "%PROJECT_ROOT%" %%F in (.env) do (
     if /I not "%%~fF"=="%SRC_ENV_FILE%" (
         if exist "%%~fF" (
             copy /Y "%SRC_ENV_FILE%" "%%~fF" >nul
-            echo [>] Updated: %%~fF
+            echo  Updated: %%~fF
         )
     )
 )
