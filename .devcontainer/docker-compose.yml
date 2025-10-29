@@ -1,27 +1,33 @@
 
 services:
-  dev:
-    image: postgres:15 
-    container_name: void-seek  # e.g., your Python or app container
-    volumes:
-      - .:/app:cached
-    ports:
-      - "4200:4200"
-    depends_on:
-      - db
+  # dev:
+  #   image: postgres:15
+  #   container_name: void-seek
+  #   volumes:
+  #     - .:/app:cached
+  #   ports:
+  #     - "4200:4200"
+  #   depends_on:
+  #     - db
 
   db:
-    build:
-      context: .              # build from current folder
-      dockerfile: Dockerabyss  # custom Dockerfile for this container
-    container_name: void-abyss
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"   # Postgres
-      - "2222:22"     # SSH
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      build:
+        context: .
+        dockerfile: Dockerabyss
+      container_name: void-abyss
+      env_file:
+        - .env
+      ports:
+        - "5432:5432"   # PostgreSQL
+        - "2222:22"     # SSH
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U nullandvoid -d void && pg_isready -U paulandvoid -d void"]
+        interval: 5s
+        retries: 5
+      restart: unless-stopped
+    
 
 volumes:
   pgdata:

@@ -1,4 +1,6 @@
-# VOID SENSE : Analytics Object
+# VOID SENSE : Custom Analysis Object
+
+Controls the custom data display and some basic analysis tools
 
 Wraps the [Chebyshev](VOID/glimpse/utils/___CHEBY.md) class  
 The analytics object controlled by the interactive console

@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM --- Paths ---
+cd "C:\Users\Derek Wingard\Desktop\Work\SAVEMYLIFE\Analytics" as root
 set "UTILS_DIR=%~dp0VOID\utils"
 set "SCRIPTS_DIR=%~dp0VOID\scripts"
 

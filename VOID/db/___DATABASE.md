@@ -1,6 +1,8 @@
 # PostgreSQL database
 # Mini API ```db.bat --<method>```
 
+Directory for filling and managing the db 
+
 All of the util functions are wrapped in this method
 ```bash
 db/db.bat --<method>
