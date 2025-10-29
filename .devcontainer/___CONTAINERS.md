@@ -9,3 +9,5 @@ Safe starts with tini init processes:
 * SSH server 
 
 Initializes with superusers for the co-founders and an existing ssh key for remote tunneling
+
+VScode tasks handle containers, use *LOCAL:* commands to not publically expose ssh port
