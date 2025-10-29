@@ -13,5 +13,5 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 22 5432
 
-ENTRYPOINT ["/usr/bin/tini-static", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/usr/local/bin/entrypoint.sh"]
