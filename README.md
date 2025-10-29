@@ -1,6 +1,15 @@
 # Live Analytics Dashboard
 
-## Setup
+## Setup  
+
+VSCode tasks to initalize SQL DB
+
+tasks:   
+    * [OPTIONAL] MAKECLEAN - only if stale db
+    * Start PostgreSQL container
+
+It is then ready to issue commnds to
+
 
 **Install required packages**
 ```bash
