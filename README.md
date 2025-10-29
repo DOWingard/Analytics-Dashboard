@@ -1,9 +1,5 @@
 # Live Analytics Dashboard
 
-***Analytics Saas tool***  
-    * VOID-ABYSS : 1st container runs the PostgreSQL db and api for seeker access  
-    * VOID-SEEK  : 2nd container will run the front end and send queries with the seeker 
-
 ## Setup
 
 **Install required packages**
@@ -84,7 +80,7 @@ uvicorn main:app --reload
     *   cheby.zero        ->  RETURNS: roots of model
 
 
-**[[SEEKR.md](seeker/___SEEKR.md)]**
+**[[SEEKR.md](VOID/seeker/___SEEKR.md)]**
 
 
 Command the SEEKR using the HIVEMIND  

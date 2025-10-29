@@ -6,21 +6,21 @@ Querie the VOID ABYSS by sending VOID SEEKER using the HIVEMIND ツ
 
 Simple test ping:  
 ```bash
-client/hivemind.bat --ping
+hivemind.bat --ping
 ```
 
 Returns whole year data for all or optionally select columns, smart parses:
 
 _default all_
 ```bash
-client/hivemind.bat --metrics  
+hivemind.bat --metrics  
 ```
 _specific columns_
 ```bash
-client/hivemind.bat --metrics funds costs users #...
+hivemind.bat --metrics funds costs users #...
 ```
 
 Compute runway from most recent table
 ```bash
-client/hivemind.bat --runway
+hivemind.bat --runway
 ```
