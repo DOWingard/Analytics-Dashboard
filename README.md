@@ -1,14 +1,16 @@
 # Live Analytics Dashboard
 
-## Setup  
+I like theming all my stuff around VOID because its fun and cool ¯\\_(ツ)_/¯
 
-VSCode tasks to initalize SQL DB
+## Setup new DB
+
+VSCode tasks to initalize container
 
 tasks:   
     * [OPTIONAL] MAKECLEAN - only if stale db
-    * Start PostgreSQL container
+    * Start VOID ABYSS
 
-It is then ready to issue commnds to
+It is then ready to issue commands to and set up the PostgreSQL DB
 
 
 **Install required packages**
@@ -23,7 +25,7 @@ Check out the commands:
 ./x.bat help
 ```
 
-_for a new db_   
+_Currently loads fake data_
 ```bash
 ./x.bat new
 ```
@@ -33,6 +35,18 @@ Check out the db:
 ./x.bat ping
 ```
 
+## Access existing DB
+
+VSCode tasks to safely bring up/down container
+
+tasks:   
+    * Bring ABYSS up
+    * Bring ABYSS down
+    
+Check out the db:
+```bash
+./x.bat ping
+```
 
 ## Open the UI interface  
 Live plots from the db
@@ -41,32 +55,50 @@ Live plots from the db
 uvicorn main:app --reload
 ```
 
+## Accessing an existing container
+
+VSCode tasks to bring up the container
+
+tasks:   
+    * [OPTIONAL] MAKECLEAN - only if stale db
+    * Start PostgreSQL container
+
+It is then ready to issue commnds to
+
+
 # Contents
+
+**[[CONTAINERS](.devcontainer/___CONTAINERS.md)]**
+
+This analytics system exists on 2 containers:
+
+    *   void-abyss  :: backend postgres server with public ssh server for remote access
+    *   void-seeker :: [TODO] set up container to run the existing UI
 
 **[[X.md](___X.md)]**   ::  _central command CLI_   
 
 ```./x.bat COMMAND```
 
-    * new       -> fresh new db  with info and 5 tables
-    * ping      -> ping full db info and 5 tables
+    *   new       -> fresh new db  with info and 5 tables
+    *   ping      -> ping full db info and 5 tables
 
 
 **[[SCRIPTS.md](VOID/scripts/___SCRIPTS.md)]**
 
-    * pingDB    -> ping the db for current time
-    * dex       -> connect into to container terminal 
-    * updateEnv -> updates all the .env files based on ```scripts/.env```
+    *   pingDB    -> ping the db for current time
+    *   dex       -> connect into to container terminal 
+    *   updateEnv -> updates all the .env files based on ```scripts/.env```
 
 **[[UTILS.md](VOID/utils/___UTILS.md)]**  ::  _composit scripts_   
 
-    * newDB     -> creates a fresh new db
-    * peek      -> fully peaks the db info
+    *   newDB     -> creates a fresh new db
+    *   peek      -> fully peaks the db info
 
 
 
 **[[DATABASE.md](VOID/db/___DATABASE.md)]**
 
-    * db   -> CLI to wrap python utils (--fill, --reset, --setup)
+    *   db   -> CLI to wrap python utils (--fill, --reset, --setup)
         -   fillYear  ->   fills sql db with 1 yr simulated data
         -   printDB   ->   print the db column titles
         -   resetDB   ->   resets db to uninitialized state
