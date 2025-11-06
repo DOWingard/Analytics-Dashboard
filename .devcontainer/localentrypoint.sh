@@ -1,17 +1,23 @@
 #!/bin/bash
 set -e
 
+# -----------------------------
 # Start Postgres in background
+# -----------------------------
 docker-entrypoint.sh postgres &
 
+# -----------------------------
 # Wait for Postgres to be ready
+# -----------------------------
 until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
   sleep 1
 done
 
 echo "[INFO] Ensuring local user exists with full privileges..."
 
-# Only ensure primary user
+# -----------------------------
+# Ensure primary user
+# -----------------------------
 if [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ]; then
   EXISTS=$(psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$POSTGRES_USER'")
   if [ "$EXISTS" != "1" ]; then
@@ -25,4 +31,14 @@ if [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ]; then
   fi
 fi
 
+# -----------------------------
+# Run daily_close_jobs.sh in background
+# -----------------------------
+SCRIPT_DIR="$(dirname "$0")"
+echo "[INFO] Starting daily job runner..."
+bash "$SCRIPT_DIR/daily_close_jobs.sh" &
+
+# -----------------------------
+# Wait for Postgres to finish (keeps container alive)
+# -----------------------------
 wait

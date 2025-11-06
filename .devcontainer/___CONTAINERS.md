@@ -8,6 +8,11 @@ Safe starts with tini init processes:
 * PostgreSQL server
 * SSH server 
 
+Live Scripts:
+
+* daily_close_jobs.sh
+    - every day at 00:01, it closes all unclosed jobs that close that day
+
 Initializes with superusers for the co-founders and an existing ssh key for remote tunneling
 
 VScode tasks handle containers, use *LOCAL:* commands to not publically expose ssh port
