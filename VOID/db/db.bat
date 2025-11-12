@@ -13,8 +13,8 @@ set "PYTHON_SCRIPT_DIR=%~dp0utils"
 REM [Choose Python script based on flag]
 if "%1"=="--fill" (
     set "SCRIPT=fillyear.py"
-) else if "%1"=="--reset" (
-    set "SCRIPT=resetDB.py"
+@REM ) else if "%1"=="--reset" (
+@REM     set "SCRIPT=resetDB.py"
 ) else if "%1"=="--setup" (
     set "SCRIPT=setupDB.py"
 ) else if "%1"=="--print" (
