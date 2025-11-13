@@ -31,12 +31,7 @@ if [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ]; then
   fi
 fi
 
-# -----------------------------
-# Run daily_close_jobs.sh in background
-# -----------------------------
-SCRIPT_DIR="$(dirname "$0")"
-echo "[INFO] Starting daily job runner..."
-bash "$SCRIPT_DIR/daily_close_jobs.sh" &
+
 
 # -----------------------------
 # Wait for Postgres to finish (keeps container alive)

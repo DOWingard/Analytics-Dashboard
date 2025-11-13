@@ -10,23 +10,23 @@ services:
   #   depends_on:
   #     - db
 
-  db:
-      build:
-        context: .
-        dockerfile: Dockerabyss
-      container_name: void-abyss
-      env_file:
-        - .env
-      ports:
-        - "5432:5432"   # PostgreSQL
-        - "2222:22"     # SSH
-      volumes:
-        - pgdata:/var/lib/postgresql/data
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U nullandvoid -d void && pg_isready -U paulandvoid -d void"]
-        interval: 5s
-        retries: 5
-      restart: unless-stopped
+  # db:
+  #     build:
+  #       context: .
+  #       dockerfile: Dockerabyss
+  #     container_name: void-abyss
+  #     env_file:
+  #       - .env
+  #     ports:
+  #       - "5432:5432"   # PostgreSQL
+  #       - "2222:22"     # SSH
+  #     volumes:
+  #       - pgdata:/var/lib/postgresql/data
+  #     healthcheck:
+  #       test: ["CMD-SHELL", "pg_isready -U nullandvoid -d void && pg_isready -U paulandvoid -d void"]
+  #       interval: 5s
+  #       retries: 5
+  #     restart: unless-stopped
   
   localdb:
       build:
