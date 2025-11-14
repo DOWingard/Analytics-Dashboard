@@ -1,7 +1,5 @@
 # Live Analytics Dashboard
 
-I like theming all my stuff around VOID because its fun and cool ¯\\_(ツ)_/¯
-
 ## Setup new DB
 
 VSCode tasks to initalize container
