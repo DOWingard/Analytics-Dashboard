@@ -86,6 +86,32 @@ if /i "%1"=="view" (
     goto :eof
 )
 
+REM --- DUMP ---
+if /i "%1"=="dump" (
+    echo [INFO] Dumping database to backup file...
+    set "BACKUP_DIR=C:\Users\Derek Wingard\Desktop\Work\SAVEMYLIFE\VOID-backend"
+    set "BACKUP_FILE=!BACKUP_DIR!\void_backup_%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%.sql"
+    
+    REM Escape special characters in password for pg_dump
+    set "PGPASSWORD=Timecube420"
+    
+    "C:\Program Files\PostgreSQL\15\bin\pg_dump.exe" ^
+        -U nullandvoid ^
+        -h 192.9.141.3 ^
+        -p 5432 ^
+        -d void ^
+        -f "!BACKUP_FILE!"
+    
+    if errorlevel 1 (
+        echo [ERROR] pg_dump failed.
+        exit /b 1
+    )
+    echo [SUCCESS] Database dumped to: !BACKUP_FILE!
+    goto :eof
+)
+
+
+
 REM --- HELP ---
 if /i "%1"=="help" (
     echo Usage: x ^<command^>
@@ -94,6 +120,7 @@ if /i "%1"=="help" (
     echo   peek    - Peek at DB contents
     echo   ping    - Ping the database for timestamp
     echo   dex     - Run dex.bat with --null --sql
+    echo   dump    - Dump the database to a local backend repo
     echo   env     - Update the .env files from root
     echo   view    - Launch Front End FastAPI server
     echo   help    - Show this help message
